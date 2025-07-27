@@ -44,3 +44,27 @@
              (inc shift)
              new-varint))))))
   ([bytes] (read-varint bytes 0 0)))
+
+(defn write-varint
+  "returns a byte array that represents x as written VarInt"
+  ([varint shift bytes]
+   (let [x (unsigned-bit-shift-right
+             varint
+             (* shift 7))]
+     (if (not
+           (==
+             (bit-and x -128)
+             0))
+       (write-varint
+         varint
+         (inc shift)
+         (conj
+           bytes
+           (bit-or
+             (bit-and x 127)
+             128)))
+       (conj
+         bytes
+         (bit-and x 127)))))
+  ([varint] (write-varint varint 0 [])))
+
