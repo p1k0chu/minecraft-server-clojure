@@ -1,5 +1,6 @@
 (ns minecraft-server-clojure.protocol-types
-  (:use [minecraft-server-clojure.core]))
+  (:use [minecraft-server-clojure.core])
+  (:import (java.io InputStream)))
 
 (defn validate-varint-shift [shift]
   "throws if the varint shift (size-1) is too big"
@@ -29,10 +30,10 @@
 
 (defn read-varint
   "reads a VarInt from byte array `bytes`"
-  ([bytes shift result]
+  ([^InputStream stream shift result]
    (do
      (validate-varint-shift shift)
-     (let [byte (get bytes shift)]
+     (let [byte (.read stream)]
        (let [new-varint (put-into-varint
                           byte
                           result
@@ -40,10 +41,10 @@
          (if (is-last-varint-byte byte)
            new-varint
            (read-varint
-             bytes
+             stream
              (inc shift)
              new-varint))))))
-  ([bytes] (read-varint bytes 0 0)))
+  ([^InputStream stream] (read-varint stream 0 0)))
 
 (defn write-varint
   "returns a byte array that represents x as written VarInt"
