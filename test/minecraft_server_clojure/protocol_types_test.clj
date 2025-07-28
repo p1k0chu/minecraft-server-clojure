@@ -1,7 +1,7 @@
 (ns minecraft-server-clojure.protocol-types-test
   (:require [clojure.test :refer :all])
-  (:use minecraft-server-clojure.protocol-types)
-  (:import (java.io ByteArrayInputStream ByteArrayOutputStream InputStream)))
+  (:use [minecraft-server-clojure.protocol-types])
+  (:import (java.io ByteArrayInputStream)))
 
 (defn test-read-varint [input expected]
   (let [output (read-varint
@@ -13,16 +13,10 @@
             expected)))))
 
 (defn test-write-varint [input expected]
-  (let [output (let [x (ByteArrayOutputStream.)]
-                 (do
-                   (write-varint
-                     input
-                     x)
-                   (.toByteArray x)))]
-    (testing (str expected " == " output)
-      (is (java.util.Arrays/equals
-            (byte-array expected)
-            output)))))
+  (testing (str "writing varint " input)
+    (is (=
+          expected
+          (varint-bytes input)))))
 
 (defn test-varint [bytes varint]
   (do
