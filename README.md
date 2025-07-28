@@ -1,7 +1,3 @@
 # minecraft-server-clojure
 
-A Clojure library designed to ... well, that part is up to you.
-
-## Usage
-
-FIXME
+Minimal minecraft server in clojure that only has working MOTD (and then crashes LMAO)
