@@ -54,30 +54,6 @@
              new-varint))))))
   ([^InputStream stream] (read-varint stream 0 0)))
 
-(defn write-varint
-  ([varint shift ^OutputStream stream]
-   (let [x (unsigned-bit-shift-right
-             varint
-             (* shift 7))]
-     (if (not
-           (==
-             (bit-and x -128)
-             0))
-       (do
-         (.write
-           stream
-           (bit-or
-             (bit-and x 127)
-             128))
-         (write-varint
-           varint
-           (inc shift)
-           stream))
-       (.write
-         stream
-         (bit-and x 127)))))
-  ([varint stream] (write-varint varint 0 stream)))
-
 (defn varint-bytes
   "returns a byte array for the VarInt"
   ([current return-bytes]
@@ -97,6 +73,13 @@
        return-bytes
        (bit-and current 127))))
   ([int] (varint-bytes int [])))
+
+(defn write-varint [varint ^OutputStream stream]
+  (.write
+    stream
+    (byte-array
+      (varint-bytes
+        varint))))
 
 (defn read-prefixed-string [^InputStream stream]
   (let [size (read-varint stream)]
