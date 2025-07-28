@@ -1,13 +1,13 @@
 (ns minecraft-server-clojure.protocol-types
-  (:use [minecraft-server-clojure.core])
-  (:import (java.io InputStream)))
+  (:import (java.io InputStream OutputStream))
+  (:use [minecraft-server-clojure.utils]))
 
 (defn validate-varint-shift [shift]
   "throws if the varint shift (size-1) is too big"
   (when (>= shift 5)
     (throw
       (IllegalStateException.
-        (str "VarInt cannot be of size" (inc shift))))))
+        (str "VarInt cannot be of size " (inc shift))))))
 
 (defn put-into-varint [value varint shift]
   "puts the byte `value` into a `varint` at the specified `shift`"
@@ -47,8 +47,7 @@
   ([^InputStream stream] (read-varint stream 0 0)))
 
 (defn write-varint
-  "returns a byte array that represents x as written VarInt"
-  ([varint shift bytes]
+  ([varint shift ^OutputStream stream]
    (let [x (unsigned-bit-shift-right
              varint
              (* shift 7))]
@@ -56,16 +55,18 @@
            (==
              (bit-and x -128)
              0))
-       (write-varint
-         varint
-         (inc shift)
-         (conj
-           bytes
+       (do
+         (.write
+           stream
            (bit-or
              (bit-and x 127)
-             128)))
-       (conj
-         bytes
+             128))
+         (write-varint
+           varint
+           (inc shift)
+           stream))
+       (.write
+         stream
          (bit-and x 127)))))
-  ([varint] (write-varint varint 0 [])))
+  ([varint stream] (write-varint varint 0 stream)))
 
