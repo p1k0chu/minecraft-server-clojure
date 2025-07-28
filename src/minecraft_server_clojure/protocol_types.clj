@@ -2,15 +2,17 @@
   (:import (java.io InputStream OutputStream))
   (:use [minecraft-server-clojure.utils]))
 
-(defn validate-varint-shift [shift]
+(defn validate-varint-shift
   "throws if the varint shift (size-1) is too big"
+  [shift]
   (when (>= shift 5)
     (throw
       (IllegalStateException.
         (str "VarInt cannot be of size " (inc shift))))))
 
-(defn put-into-varint [value varint shift]
+(defn put-into-varint
   "puts the byte `value` into a `varint` at the specified `shift`"
+  [value varint shift]
   (bit-or
     varint
     (bit-shift-left
@@ -19,8 +21,9 @@
         127)
       (* shift 7))))
 
-(defn is-last-varint-byte [byte]
+(defn is-last-varint-byte
   "checks if the byte has the continuation bit set for VarInt's"
+  [byte]
   (not
     (==
       (bit-and
@@ -33,7 +36,12 @@
   ([^InputStream stream shift result]
    (do
      (validate-varint-shift shift)
-     (let [byte (.read stream)]
+     (let [byte (check
+                  #(!= % -1)
+                  (.read stream)
+                  #(str "varint: shift=" shift
+                        ",result=" result
+                        ",byte=" %))]
        (let [new-varint (put-into-varint
                           byte
                           result
@@ -70,3 +78,49 @@
          (bit-and x 127)))))
   ([varint stream] (write-varint varint 0 stream)))
 
+(defn read-prefixed-string [^InputStream stream]
+  (let [size (read-varint stream)]
+    (String.
+      (.readNBytes
+        stream
+        size))))
+
+(defn write-prefixed-string [^String value ^OutputStream stream]
+  (let [x (.getBytes value "UTF-8")]
+    (do
+      (println (alength x))
+      (write-varint
+        (alength x)
+        stream)
+      (.write
+        stream
+        x))))
+
+(defn read-n-bytes-long [^InputStream stream n]
+  (reduce
+    bit-or
+    (for [x (range n)]
+      (bit-shift-left
+        (bit-and
+          (check
+            #(!= % -1)
+            (.read stream)
+            #"AAAAAAAAAAAAAAA")
+          0xFF)
+        (*
+          (- n x 1)
+          8)))))
+
+(defn read-short [stream]
+  (read-n-bytes-long stream 2))
+
+(defn write-prefixed-bytes [^OutputStream output input]
+  (do
+    (write-varint
+      (let [x (alength input)]
+        (println x)
+        x)
+      output)
+    (.write
+      output
+      input)))
