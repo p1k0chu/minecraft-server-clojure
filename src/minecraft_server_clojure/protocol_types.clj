@@ -39,7 +39,7 @@
      (let [byte (check
                   #(!= % -1)
                   (.read stream)
-                  #(str "varint: shift=" shift
+                  #(str "end of stream while reading varint: shift=" shift
                         ",result=" result
                         ",byte=" %))]
        (let [new-varint (put-into-varint
@@ -88,7 +88,6 @@
 (defn write-prefixed-string [^String value ^OutputStream stream]
   (let [x (.getBytes value "UTF-8")]
     (do
-      (println (alength x))
       (write-varint
         (alength x)
         stream)
@@ -112,14 +111,12 @@
           8)))))
 
 (defn read-short [stream]
-  (read-n-bytes-long stream 2))
+  (read-n-bytes-long stream Short/BYTES))
 
 (defn write-prefixed-bytes [^OutputStream output input]
   (do
     (write-varint
-      (let [x (alength input)]
-        (println x)
-        x)
+      (alength input)
       output)
     (.write
       output

@@ -44,7 +44,7 @@
           (let [inputStream (.getInputStream client-sock)]
             (let [outputStream (.getOutputStream client-sock)]
               (let [state (atom {:protocol 0})]
-                (while (not (.isClosed client-sock))
+                (while true
                   (swap!
                     state
                     conj (handle-packet
