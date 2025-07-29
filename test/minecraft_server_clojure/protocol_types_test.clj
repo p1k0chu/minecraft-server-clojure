@@ -4,13 +4,10 @@
   (:import (java.io ByteArrayInputStream)))
 
 (defn test-read-varint [input expected]
-  (let [output (read-varint
-                 (ByteArrayInputStream.
-                   (byte-array input)))]
-    (testing (str expected " == " output)
-      (is (==
-            output
-            expected)))))
+  (testing (str "reading varint from " input " == " expected)
+    (is (==
+          expected
+          (read-varint-real input)))))
 
 (defn test-write-varint [input expected]
   (testing (str "writing varint " input)
