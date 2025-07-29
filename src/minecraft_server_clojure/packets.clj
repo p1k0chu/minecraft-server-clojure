@@ -1,19 +1,20 @@
 (ns minecraft-server-clojure.packets
   (:use [minecraft-server-clojure.protocol-types]
         [minecraft-server-clojure.utils])
-  (:import (java.io ByteArrayOutputStream InputStream OutputStream)))
+  (:import (java.io ByteArrayInputStream ByteArrayOutputStream InputStream OutputStream)))
 
-(defn read-c2s-handshake-packet [^InputStream stream]
-  {:protocol-version (read-varint stream)
-   :server-address   (read-prefixed-string stream)
-   :server-port      (read-short stream)
-   :intent           (read-varint stream)})
+(defn read-c2s-handshake-packet [bytes]
+  (let [stream (ByteArrayInputStream. bytes)]
+    {:protocol-version (read-varint stream)
+     :server-address   (read-prefixed-string stream)
+     :server-port      (read-short stream)
+     :intent           (read-varint stream)}))
 
-(defn handle-c2s-handshake-packet [^InputStream inputStream ^OutputStream outputStream]
+(defn handle-c2s-handshake-packet [packet-bytes ^OutputStream outputStream]
   (do
     (println "handshake packet!!!")
     {:protocol (get
-                 (read-c2s-handshake-packet inputStream)
+                 (read-c2s-handshake-packet packet-bytes)
                  :intent)}))
 
 (defn make-status-response-json [resp]
@@ -31,13 +32,14 @@
 (defn write-packet [^OutputStream output input id]
   "writes the packet `id` and the contents of `input` into `output` (everything is length prefixed)"
   (do
-    (write-prefixed-bytes
+    (.write
       output
-      (let [x (ByteArrayOutputStream.)]
-        (do
-          (write-varint id x)
-          (.write x input)
-          (.toByteArray x))))
+      (byte-array
+        (prefix-bytes
+          (reduce
+            #(conj %1 %2)
+            (varint-bytes id)
+            input))))
     (.flush output)))
 
 (defn write-s2c-status-response-packet [status-response ^OutputStream stream]
@@ -63,5 +65,5 @@
         :motd             "hello from clojure!"}
        outputStream)
      {}))
-  ([^InputStream inputStream ^OutputStream outputStream]
+  ([packet-bytes ^OutputStream outputStream]
    (handle-c2s-status-request-packet outputStream)))

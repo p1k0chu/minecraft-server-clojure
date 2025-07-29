@@ -27,7 +27,7 @@
      (get c2s-packet-protocols protocol)
      (read-varint
        inputStream))
-   inputStream
+   (.readAllBytes inputStream)
    outputStream))
 
 (defn -main [& args]

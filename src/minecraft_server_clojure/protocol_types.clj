@@ -1,5 +1,6 @@
 (ns minecraft-server-clojure.protocol-types
-  (:import (java.io InputStream OutputStream))
+  (:import (java.io InputStream OutputStream)
+           (java.nio.charset StandardCharsets))
   (:use [minecraft-server-clojure.utils]))
 
 (defn validate-varint-shift
@@ -74,13 +75,6 @@
        (bit-and current 127))))
   ([int] (varint-bytes int [])))
 
-(defn write-varint [varint ^OutputStream stream]
-  (.write
-    stream
-    (byte-array
-      (varint-bytes
-        varint))))
-
 (defn read-prefixed-string [^InputStream stream]
   (let [size (read-varint stream)]
     (String.
@@ -88,15 +82,23 @@
         stream
         size))))
 
+(defn prefix-bytes
+  "prefixes byte array `bytes` with its length as VarInt"
+  [bytes]
+  (reduce
+    #(conj %1 %2)
+    (varint-bytes
+      (count bytes))
+    bytes))
+
 (defn write-prefixed-string [^String value ^OutputStream stream]
-  (let [x (.getBytes value "UTF-8")]
-    (do
-      (write-varint
-        (alength x)
-        stream)
-      (.write
-        stream
-        x))))
+  (.write
+    stream
+    (byte-array
+      (prefix-bytes
+        (.getBytes
+          value
+          StandardCharsets/UTF_8)))))
 
 (defn read-n-bytes-long [^InputStream stream n]
   (reduce
@@ -115,12 +117,3 @@
 
 (defn read-short [stream]
   (read-n-bytes-long stream Short/BYTES))
-
-(defn write-prefixed-bytes [^OutputStream output input]
-  (do
-    (write-varint
-      (alength input)
-      output)
-    (.write
-      output
-      input)))
