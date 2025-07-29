@@ -3,4 +3,5 @@
   :url "http://example.com/FIXME"
   :license {:name "MIT"}
   :dependencies [[org.clojure/clojure "1.11.1"]]
-  :repl-options {:init-ns minecraft-server-clojure.core})
+  :repl-options {:init-ns minecraft-server-clojure.core}
+  :main minecraft-server-clojure.core/-main)
