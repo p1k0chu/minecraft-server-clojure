@@ -10,24 +10,6 @@
     (throw
       (IllegalStateException.
         (str "VarInt cannot be of size " (inc shift))))))
-(defn varint-size
-  "returns the size of the varint on the beginning of the coll"
-  [coll]
-  (let [x (atom 0)]
-    (do
-      (while (and
-               (<
-                 @x
-                 (count coll))
-               (!=
-                 (bit-and
-                   (get coll @x)
-                   128)
-                 128))
-        (swap!
-          x
-          inc))
-      @x)))
 
 (defn put-into-varint
   "puts the byte `value` into a `varint` at the specified `shift`"
@@ -72,6 +54,25 @@
              (inc shift)
              new-varint))))))
   ([^InputStream stream] (read-varint stream 0 0)))
+
+(defn varint-size
+  "returns the size of the varint on the beginning of the coll"
+  [coll]
+  (let [x (atom 0)]
+    (do
+      (while (and
+               (<
+                 @x
+                 (count coll))
+               (!=
+                 (bit-and
+                   (get coll @x)
+                   128)
+                 128))
+        (swap!
+          x
+          inc))
+      @x)))
 
 (defn read-varint-real [bytes]
   (reduce
