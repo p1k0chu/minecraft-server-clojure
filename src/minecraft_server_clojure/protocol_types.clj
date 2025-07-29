@@ -83,22 +83,27 @@
          (* %1 7))
       bytes)))
 
-(defn read-varint-side-effected
-  "reads the varint and increments `index` atom by the length of the consumed varint"
-  [bytes index]
-  (let [real-bytes (drop
-                     @index
-                     bytes)]
-    (let [size (varint-size real-bytes)]
-      (let [x (read-varint-real
-                (take
-                  size
-                  real-bytes))]
-        (do
-          (swap!
-            index
-            inc size)
-          x)))))
+(defn read-varint-real-use-this
+  "returns map with key :result (the varint) and :leftover (the bytes left from reading)"
+  [coll]
+  (let [size (varint-size coll)]
+    {:result (read-varint-real
+               (take
+                 size
+                 coll))
+     :leftover (drop
+                 size
+                 coll)}))
+
+(defn read-varint-side-effect
+  "convenience function to read a VarInt from a atom coll"
+  [atom-coll]
+  (let [x (read-varint-real-use-this @atom-coll)]
+    (do
+      (swap!
+        atom-coll
+        (:leftover x))
+      (:result x))))
 
 (defn varint-bytes
   "returns a byte array for the VarInt"
